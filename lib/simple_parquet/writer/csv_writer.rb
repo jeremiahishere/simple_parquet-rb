@@ -1,30 +1,45 @@
 require 'csv'
+require 'pry'
 
 module SimpleParquet
   module Writer
     class CsvWriter
       NO_IDEA_WHAT_THIS_SHOULD_BE = 42
 
+      attr_reader :proto
+
       def initialize(raw_csv)
         @csv = CSV.parse(raw_csv, headers: true)
+
+        output_io ||= "" # totally cheating here
+        @transport = Thrift::MemoryBufferTransport.new(output_io)
+        @proto = Thrift::CompactProtocol.new(@transport)
       end
 
-      def write(output_io = nil)
-        output_io ||= "" # totally cheating here
-        transport = Thrift::MemoryBufferTransport.new(output_io)
-        proto = Thrift::CompactProtocol.new(transport)
+      def current_offset
+        proto.trans.available
+      end
 
-        proto.write_string("PAR1")
+      def write
+
+        current_offset = 0
+
+        proto.write_string(parquet_special_string)
+
         # write the start file descriptor
         @csv.headers.each do |header|
           # write each data chunk and associated page header
+          set_data_page_offset(header, current_offset)
+
           page_header(header).write(proto)
           proto.write_string(column_data[header])
         end
         # write the file metadata
+        file_meta_data_offset = current_offset
         file_meta_data.write(proto)
+
         # write the file meta data offset
-        # ???
+        proto.write_string([file_meta_data_offset].pack("l<")) # almost certainly the wrong write method
         # write the end file descriptor
         proto.write_string("PAR1")
 
@@ -35,6 +50,20 @@ module SimpleParquet
         @csv.each do |row|
           puts row.inspect
         end
+      end
+
+      def set_data_page_offset(header, offset)
+        @data_page_offset ||= {}
+        @data_page_offset[header] = offset
+      end
+
+      def data_page_offset(header)
+        @data_page_offset ||= {}
+        @data_page_offset[header]
+      end
+
+      def parquet_special_string
+        "PAR1"
       end
 
       def column_data
@@ -124,7 +153,7 @@ module SimpleParquet
           meta_data.total_uncompressed_size = column_data[header].length
           meta_data.total_compressed_size = column_data[header].length
           # meta_data.key_value_metadata = 
-          meta_data.data_page_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
+          meta_data.data_page_offset = data_page_offset(header)
           # meta_data.index_page_offset =
           # meta_data.dictionary_page_offset =
           # meta_data.statistics =

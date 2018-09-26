@@ -6,11 +6,9 @@ RSpec.describe SimpleParquet::Writer::CsvWriter do
     writer = SimpleParquet::Writer::CsvWriter.new(csv)
     proto = writer.write
 
-    fmd = FileMetaData.new
-    fmd.read(proto)
-    puts fmd.inspect
+    transport = proto.trans
+    output = transport.read(transport.available)
 
-    expect(fmd.version).to be 1
-    expect(fmd.num_rows).to be 7
+    puts output.inspect
   end
 end
