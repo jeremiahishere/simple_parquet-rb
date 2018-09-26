@@ -162,6 +162,9 @@ module SimpleParquet
 
         chunk = Configurator.configurate(ColumnChunk) do |chunk|
           # chunk.file_path
+
+          # the docs suggest this should be the offset to the chunk meta data but I am not sure how
+          # to figure that out because the meta data occurs after the offset
           chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
           chunk.meta_data = meta_data
           # chunk.offset_index_offset
@@ -181,7 +184,7 @@ module SimpleParquet
         group = RowGroup.new
         group.num_rows = num_rows
         group.total_byte_size = column_data.collect(&:length).inject(0, :+) # size of the uncompressed column data
-        group.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE # offset to the row group
+        group.file_offset = data_page_offset(@csv.headers.first) # offset to the row group
         columns = []
         @csv.headers.each do |header|
           columns << column_chunk(header)
