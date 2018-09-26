@@ -17,7 +17,7 @@ module SimpleParquet
       include Enumerable
 
       def initialize(raw_parquet)
-        @io = StringIO.new(raw_parquet)
+        @io = StringIO.new(raw_parquet.chomp)
         @transport = Thrift::IOStreamTransport.new(@io, @io)
         @fmd = file_meta_data
       end
