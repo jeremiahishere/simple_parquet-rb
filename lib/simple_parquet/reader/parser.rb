@@ -98,6 +98,10 @@ module SimpleParquet
       end
 
       def file_meta_data
+        if @io.read(4) != "PAR1"
+          raise "Invalid parquet file"
+        end
+
         # Seek to the footer, which is 8 bytes from the end. The last 8 bytes
         # is the magic PAR1
         @io.seek(-8, IO::SEEK_END)
