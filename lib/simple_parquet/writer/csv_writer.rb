@@ -21,9 +21,6 @@ module SimpleParquet
       end
 
       def write
-
-        current_offset = 0
-
         proto.write_string(parquet_special_string)
 
         # write the start file descriptor
@@ -39,7 +36,7 @@ module SimpleParquet
         file_meta_data.write(proto)
 
         # write the file meta data offset
-        proto.write_string([file_meta_data_offset].pack("l<")) # almost certainly the wrong write method
+        proto.write_i32(file_meta_data_offset) # almost certainly the wrong write method
         # write the end file descriptor
         proto.write_string("PAR1")
 
