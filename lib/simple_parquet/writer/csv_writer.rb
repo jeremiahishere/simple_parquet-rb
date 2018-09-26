@@ -21,7 +21,9 @@ module SimpleParquet
       end
 
       def write
-        proto.write_string(parquet_special_string)
+        parquet_special_string.force_encoding(Encoding::BINARY).each_byte do |b|
+          proto.write_byte(b)
+        end
 
         # write the start file descriptor
         @csv.headers.each do |header|
@@ -36,9 +38,14 @@ module SimpleParquet
         file_meta_data.write(proto)
 
         # write the file meta data offset
-        proto.write_i32(file_meta_data_offset) # almost certainly the wrong write method
+        puts file_meta_data_offset
+        [file_meta_data_offset].pack("l<").force_encoding(Encoding::BINARY).each_byte do |b|
+          proto.write_byte(b)
+        end
         # write the end file descriptor
-        proto.write_string("PAR1")
+        parquet_special_string.force_encoding(Encoding::BINARY).each_byte do |b|
+          proto.write_byte(b)
+        end
 
         proto
       end
