@@ -42,7 +42,6 @@ module SimpleParquet
 
         # write the file meta data offset
         file_meta_data_offset = file_meta_data_end - file_meta_data_start
-        puts file_meta_data_offset
         [file_meta_data_offset].pack("l<").force_encoding(Encoding::BINARY).each_byte do |b|
           proto.write_byte(b)
         end
