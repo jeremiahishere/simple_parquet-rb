@@ -31,7 +31,9 @@ module SimpleParquet
           set_data_page_offset(header, current_offset)
 
           page_header(header).write(proto)
-          proto.write_string(column_data[header])
+          column_data[header].force_encoding(Encoding::BINARY).each_byte do |b|
+            proto.write_byte(b)
+          end
         end
         # write the file metadata
         file_meta_data_start = current_offset

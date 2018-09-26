@@ -8,8 +8,9 @@ RSpec.describe SimpleParquet::Writer::CsvWriter do
 
     transport = proto.trans
     output = transport.read(transport.available)
-    p = SimpleParquet::Reader::Parser.new(output)
-
-    puts output.inspect
+    reader = SimpleParquet::Reader::Parser.new(output)
+    reader.each do |something|
+      puts something.inspect
+    end
   end
 end
