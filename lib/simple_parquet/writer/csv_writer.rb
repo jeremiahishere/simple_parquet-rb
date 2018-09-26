@@ -31,17 +31,16 @@ module SimpleParquet
       end
 
       def file_meta_data
-        fmd = FileMetaData.new
-        fmd.version = 1
-        fmd.schema = schema_meta_data
-        fmd.num_rows = 7
-        fmd.row_groups = row_groups_meta_data
-        
-        # fmd.key_value_metadata = [] # not sure if this is required
-        fmd.created_by = "O2O"
-        # fmd.column_orders = ? # this definitely optional
-
-        fmd
+        Configurator.configurate(FileMetaData) do |fmd|
+          fmd.version = 1
+          fmd.schema = schema_meta_data
+          fmd.num_rows = 7
+          fmd.row_groups = row_groups_meta_data
+          
+          # fmd.key_value_metadata = [] # not sure if this is required
+          fmd.created_by = "O2O"
+          # fmd.column_orders = ? # this definitely optional
+        end
       end
 
       def num_rows
@@ -58,13 +57,13 @@ module SimpleParquet
         # header.num_children = num_rows
         # schema << header
         @csv.headers.each do |header|
-          element = SchemaElement.new
-
-          element.name = header
-          element.type = Type::BYTE_ARRAY
-          element.repetition_type = FieldRepetitionType::REQUIRED # probably should be required, not 100%
-          element.converted_type = ConvertedType::UTF8
-          element.logicalType = LogicalType::STRING(StringType.new)
+          element = Configurator.configurate(SchemaElement) do |element|
+            element.name = header
+            element.type = Type::BYTE_ARRAY
+            element.repetition_type = FieldRepetitionType::REQUIRED # probably should be required, not 100%
+            element.converted_type = ConvertedType::UTF8
+            element.logicalType = LogicalType::STRING(StringType.new)
+          end
 
           schema << element
         end
@@ -81,31 +80,32 @@ module SimpleParquet
         group.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE # offset to the row group
         columns = []
         @csv.headers.each do |header|
-          chunk = ColumnChunk.new
-          
-          meta_data = ColumnMetaData.new
-          meta_data.type = Type::BYTE_ARRAY
-          meta_data.encodings = [Encoding::PLAIN]
-          meta_data.path_in_schema = [header]
-          meta_data.codec = CompressionCodec::UNCOMPRESSED
-          meta_data.num_values = num_rows
-          meta_data.total_uncompressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
-          meta_data.total_compressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
-          # meta_data.key_value_metadata = 
-          meta_data.data_page_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
-          # meta_data.index_page_offset =
-          # meta_data.dictionary_page_offset =
-          # meta_data.statistics =
-          # meta_data.encoding_stats =
-          
-          # chunk.file_path
-          chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
-          chunk.meta_data = meta_data
-          # chunk.offset_index_offset
-          # chunk.offset_index_length
-          # chunk.column_index_offset
-          # chunk.column_index_length
-          # chunk.crypto_meta_data
+          meta_data = Configurator.configurate(ColumnMetaData) do |meta_data|
+            meta_data.type = Type::BYTE_ARRAY
+            meta_data.encodings = [Encoding::PLAIN]
+            meta_data.path_in_schema = [header]
+            meta_data.codec = CompressionCodec::UNCOMPRESSED
+            meta_data.num_values = num_rows
+            meta_data.total_uncompressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
+            meta_data.total_compressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
+            # meta_data.key_value_metadata = 
+            meta_data.data_page_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
+            # meta_data.index_page_offset =
+            # meta_data.dictionary_page_offset =
+            # meta_data.statistics =
+            # meta_data.encoding_stats =
+          end
+
+          chunk = Configurator.configurate(ColumnChunk) do |chunk|
+            # chunk.file_path
+            chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
+            chunk.meta_data = meta_data
+            # chunk.offset_index_offset
+            # chunk.offset_index_length
+            # chunk.column_index_offset
+            # chunk.column_index_length
+            # chunk.crypto_meta_data
+          end
           
           columns << chunk
         end
