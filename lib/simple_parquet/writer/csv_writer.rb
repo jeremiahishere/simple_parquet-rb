@@ -14,19 +14,62 @@ module SimpleParquet
         transport = Thrift::MemoryBufferTransport.new(output_io)
         proto = Thrift::CompactProtocol.new(transport)
 
+        proto.write_string("PAR1")
         # write the start file descriptor
-        # write each data chunk and associated page header
+        @csv.headers.each do |header|
+          # write each data chunk and associated page header
+          page_header(header).write(proto)
+          proto.write_string(column_data[header])
+        end
         # write the file metadata
         file_meta_data.write(proto)
         # write the file meta data offset
+        # ???
         # write the end file descriptor
+        proto.write_string("PAR1")
 
         proto
       end
 
-      def to_s
+      def print
         @csv.each do |row|
           puts row.inspect
+        end
+      end
+
+      def column_data
+        unless defined? @column_data
+          @column_data = {}
+
+          @csv.headers.each do |header|
+            @column_data[header] = ""
+            @csv.each do |row|
+              @column_data[header] += [row[header].length].pack("l<") + row[header]
+            end
+          end
+        end
+        
+        @column_data
+      end
+
+      def page_header(header)
+        data_page_header = Configurator.configurate(DataPageHeader) do |dh|
+          dh.num_values = num_rows
+          dh.encoding = Encoding::PLAIN
+          dh.definition_level_encoding = Encoding::PLAIN
+          dh.repetition_level_encoding = Encoding::PLAIN
+          # dh.statistics
+        end
+
+        Configurator.configurate(PageHeader) do |ph|
+          ph.type = PageType::DATA_PAGE
+          ph.uncompressed_page_size = column_data[header].length
+          ph.compressed_page_size = column_data[header].length
+          # ph.crc
+          ph.data_page_header = data_page_header
+          # ph.index_page_header
+          # ph.dictionary_page_header
+          # ph.data_page_header_v2
         end
       end
 
@@ -71,43 +114,48 @@ module SimpleParquet
         schema
       end
 
+      def column_chunk(header)
+        meta_data = Configurator.configurate(ColumnMetaData) do |meta_data|
+          meta_data.type = Type::BYTE_ARRAY
+          meta_data.encodings = [Encoding::PLAIN]
+          meta_data.path_in_schema = [header]
+          meta_data.codec = CompressionCodec::UNCOMPRESSED
+          meta_data.num_values = num_rows
+          meta_data.total_uncompressed_size = column_data[header].length
+          meta_data.total_compressed_size = column_data[header].length
+          # meta_data.key_value_metadata = 
+          meta_data.data_page_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
+          # meta_data.index_page_offset =
+          # meta_data.dictionary_page_offset =
+          # meta_data.statistics =
+          # meta_data.encoding_stats =
+        end
+
+        chunk = Configurator.configurate(ColumnChunk) do |chunk|
+          # chunk.file_path
+          chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
+          chunk.meta_data = meta_data
+          # chunk.offset_index_offset
+          # chunk.offset_index_length
+          # chunk.column_index_offset
+          # chunk.column_index_length
+          # chunk.crypto_meta_data
+        end
+
+        chunk
+      end
+
       def row_groups_meta_data
         row_groups = []
 
+        # there is only one row group for now
         group = RowGroup.new
         group.num_rows = num_rows
-        group.total_byte_size = NO_IDEA_WHAT_THIS_SHOULD_BE # size of the uncompressed column data
+        group.total_byte_size = column_data.collect(&:length).inject(0, :+) # size of the uncompressed column data
         group.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE # offset to the row group
         columns = []
         @csv.headers.each do |header|
-          meta_data = Configurator.configurate(ColumnMetaData) do |meta_data|
-            meta_data.type = Type::BYTE_ARRAY
-            meta_data.encodings = [Encoding::PLAIN]
-            meta_data.path_in_schema = [header]
-            meta_data.codec = CompressionCodec::UNCOMPRESSED
-            meta_data.num_values = num_rows
-            meta_data.total_uncompressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
-            meta_data.total_compressed_size = NO_IDEA_WHAT_THIS_SHOULD_BE
-            # meta_data.key_value_metadata = 
-            meta_data.data_page_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
-            # meta_data.index_page_offset =
-            # meta_data.dictionary_page_offset =
-            # meta_data.statistics =
-            # meta_data.encoding_stats =
-          end
-
-          chunk = Configurator.configurate(ColumnChunk) do |chunk|
-            # chunk.file_path
-            chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
-            chunk.meta_data = meta_data
-            # chunk.offset_index_offset
-            # chunk.offset_index_length
-            # chunk.column_index_offset
-            # chunk.column_index_length
-            # chunk.crypto_meta_data
-          end
-          
-          columns << chunk
+          columns << column_chunk(header)
         end
         group.columns = columns
 
