@@ -34,10 +34,12 @@ module SimpleParquet
           proto.write_string(column_data[header])
         end
         # write the file metadata
-        file_meta_data_offset = current_offset
+        file_meta_data_start = current_offset
         file_meta_data.write(proto)
+        file_meta_data_end = current_offset
 
         # write the file meta data offset
+        file_meta_data_offset = file_meta_data_end - file_meta_data_start
         puts file_meta_data_offset
         [file_meta_data_offset].pack("l<").force_encoding(Encoding::BINARY).each_byte do |b|
           proto.write_byte(b)

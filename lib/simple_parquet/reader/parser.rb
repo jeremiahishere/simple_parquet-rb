@@ -110,6 +110,8 @@ module SimpleParquet
         fmd_size = @io.read(4).unpack("<i")[0]
         @io.seek(-(8 + fmd_size), IO::SEEK_END)
 
+        binding.pry
+
         fmd = FileMetaData.new
         fmd.read(proto)
         fmd
