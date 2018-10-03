@@ -5,12 +5,9 @@ RSpec.describe SimpleParquet do
 
   it "can write and read parquet files" do
     csv = File.read(File.join(File.dirname(__FILE__), 'fixtures', 'hotdogs.csv'))
-    writer = SimpleParquet::Writer::CsvWriter.new(csv)
-    proto = writer.write
+    writer = SimpleParquet::Writer::ParquetDocument.new(csv)
 
-    transport = proto.trans
-    output = transport.read(transport.available)
-
+    output = writer.to_byte_string
 
     `rm -f /tmp/test.parquet`
     p output

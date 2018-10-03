@@ -1,56 +1,50 @@
 require 'csv'
-require 'pry'
+
+# This was the original csv -> parquet converter.  It has been superceded by the contents of the
+# SimpleParquet::Writer namespace.  Delete this at some point.
 
 module SimpleParquet
   module Writer
     class CsvWriter
-      NO_IDEA_WHAT_THIS_SHOULD_BE = 42
-
       attr_reader :proto
 
       def initialize(raw_csv)
         @csv = CSV.parse(raw_csv, headers: true)
 
         output_io ||= "" # totally cheating here
-        @transport = Thrift::MemoryBufferTransport.new(output_io)
-        @proto = Thrift::CompactProtocol.new(@transport)
       end
 
       def current_offset
         proto.trans.available
       end
 
+      # IMPORTANT NOTE: the problem with this solution is that the page offsets cannot be calculated
+      # until the parts can figure out how big they are
       def write
-        parquet_special_string.force_encoding(Encoding::BINARY).each_byte do |b|
-          proto.write_byte(b)
-        end
+        parts = [ ]
+        parts << parquet_special_string
 
         # write the start file descriptor
         @csv.headers.each do |header|
           # write each data chunk and associated page header
           set_data_page_offset(header, current_offset)
 
-          page_header(header).write(proto)
-          column_data[header].force_encoding(Encoding::BINARY).each_byte do |b|
-            proto.write_byte(b)
-          end
+          parts << page_header(header)
+          parts << column_data[header]
         end
         # write the file metadata
         file_meta_data_start = current_offset
-        file_meta_data.write(proto)
+        parts << file_meta_data
         file_meta_data_end = current_offset
 
         # write the file meta data offset
         file_meta_data_offset = file_meta_data_end - file_meta_data_start
-        [file_meta_data_offset].pack("l<").force_encoding(Encoding::BINARY).each_byte do |b|
-          proto.write_byte(b)
-        end
+        parts << file_meta_data_offset
         # write the end file descriptor
-        parquet_special_string.force_encoding(Encoding::BINARY).each_byte do |b|
-          proto.write_byte(b)
-        end
+        parts << parquet_special_string
 
-        proto
+        writer = ParquetWriter.new(parts)
+        writer.write
       end
 
       def print
@@ -89,24 +83,13 @@ module SimpleParquet
       end
 
       def page_header(header)
-        data_page_header = Configurator.configurate(DataPageHeader) do |dh|
-          dh.num_values = num_rows
-          dh.encoding = Encoding::PLAIN
-          dh.definition_level_encoding = Encoding::PLAIN
-          dh.repetition_level_encoding = Encoding::PLAIN
-          # dh.statistics
-        end
-
-        Configurator.configurate(PageHeader) do |ph|
-          ph.type = PageType::DATA_PAGE
-          ph.uncompressed_page_size = column_data[header].length
-          ph.compressed_page_size = column_data[header].length
-          # ph.crc
-          ph.data_page_header = data_page_header
-          # ph.index_page_header
-          # ph.dictionary_page_header
-          # ph.data_page_header_v2
-        end
+        Configurator.page_header_with_defaults({
+          uncompressed_page_size: column_data[header].length,
+          compressed_page_size: column_data[header].length,
+          data_page_header: {
+            num_values: num_rows
+          }
+        })
       end
 
       def file_meta_data
@@ -136,52 +119,24 @@ module SimpleParquet
         # header.num_children = num_rows
         # schema << header
         @csv.headers.each do |header|
-          element = Configurator.configurate(SchemaElement) do |element|
-            element.name = header
-            element.type = Type::BYTE_ARRAY
-            element.repetition_type = FieldRepetitionType::REQUIRED # probably should be required, not 100%
-            element.converted_type = ConvertedType::UTF8
-            element.logicalType = LogicalType::STRING(StringType.new)
-          end
-
-          schema << element
+          schema << Configurator.schema_element_with_defaults({
+            name: header
+          })
         end
 
         schema
       end
 
       def column_chunk(header)
-        meta_data = Configurator.configurate(ColumnMetaData) do |meta_data|
-          meta_data.type = Type::BYTE_ARRAY
-          meta_data.encodings = [Encoding::PLAIN]
-          meta_data.path_in_schema = [header]
-          meta_data.codec = CompressionCodec::UNCOMPRESSED
-          meta_data.num_values = num_rows
-          meta_data.total_uncompressed_size = column_data[header].length
-          meta_data.total_compressed_size = column_data[header].length
-          # meta_data.key_value_metadata = 
-          meta_data.data_page_offset = data_page_offset(header)
-          # meta_data.index_page_offset =
-          # meta_data.dictionary_page_offset =
-          # meta_data.statistics =
-          # meta_data.encoding_stats =
-        end
-
-        chunk = Configurator.configurate(ColumnChunk) do |chunk|
-          # chunk.file_path
-
-          # the docs suggest this should be the offset to the chunk meta data but I am not sure how
-          # to figure that out because the meta data occurs after the offset
-          chunk.file_offset = NO_IDEA_WHAT_THIS_SHOULD_BE
-          chunk.meta_data = meta_data
-          # chunk.offset_index_offset
-          # chunk.offset_index_length
-          # chunk.column_index_offset
-          # chunk.column_index_length
-          # chunk.crypto_meta_data
-        end
-
-        chunk
+        Configurator.column_chunk_with_defaults({
+          meta_data: {
+            path_in_schema: [header],
+            total_uncompressed_size: column_data[header].length,
+            total_compressed_size: column_data[header].length,
+            data_page_offset: data_page_offset(header),
+            num_values: num_rows
+          }
+        })
       end
 
       def row_groups_meta_data
