@@ -3,7 +3,7 @@ module SimpleParquet
     RSpec.describe FileMetaData do
       let(:data_pages) do
         raw_csv = File.read(File.join(File.dirname(__FILE__), '..', 'fixtures', 'hotdogs.csv'))
-        csv = ColumnarCsv.new(raw_csv)
+        csv = Support::ColumnarCsv.new(raw_csv)
         initial_offset = "PAR1".length
 
         DataPageCollection.new(csv, initial_offset)

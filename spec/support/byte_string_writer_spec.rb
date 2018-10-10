@@ -1,5 +1,5 @@
 module SimpleParquet
-  module Writer
+  module Support
     RSpec.describe ByteStringWriter do
       it 'converts a string to a byte string' do
         writer = ByteStringWriter.new("hello")

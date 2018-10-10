@@ -1,5 +1,5 @@
 module SimpleParquet
-  module Writer
+  module Support
     # Converts a single string, number of thrift object into it's associated byte string
     class ByteStringWriter
       # @param [String, Fixnum, Array<String>, Thrift::Struct] obj

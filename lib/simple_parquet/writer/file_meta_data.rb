@@ -14,15 +14,15 @@ module SimpleParquet
       # @return [String] The file meta data followed by the length of the file meta data so it can
       #  be read when parsing the file
       def to_byte_string
-        output = ByteStringWriter.new(meta_data).to_byte_string
-        output += ByteStringWriter.new(output.size).to_byte_string
+        output = Support::ByteStringWriter.new(meta_data).to_byte_string
+        output += Support::ByteStringWriter.new(output.size).to_byte_string
 
         output
       end
 
       # @return [FileMetaData] Meta data for the data pages
       def meta_data
-        Configurator.file_meta_data_with_defaults({
+        Support::Configurator.file_meta_data_with_defaults({
           schema: schema_meta_data,
           num_rows: data_pages.first.values.size,
           row_groups: row_groups_meta_data
@@ -33,7 +33,7 @@ module SimpleParquet
       def schema_meta_data
         # not sure if there needs to be a header schema element with the number of columns in it
         @data_pages.collect do |page|
-          Configurator.schema_element_with_defaults({
+          Support::Configurator.schema_element_with_defaults({
             name: page.header
           })
         end
@@ -41,7 +41,7 @@ module SimpleParquet
 
       # @return [ColumnChunk] Meta data about the size and location of each column chunk
       def column_chunk(page)
-        Configurator.column_chunk_with_defaults({
+        Support::Configurator.column_chunk_with_defaults({
           file_offset: data_pages.offset_for(page),
           meta_data: {
             path_in_schema: [page.header],

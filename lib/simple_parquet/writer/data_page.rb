@@ -14,7 +14,7 @@ module SimpleParquet
       # @return [PageHeader] with the size and number of values set
       def page_header
         unless defined? @page_header
-          @page_header = Configurator.page_header_with_defaults({
+          @page_header = Support::Configurator.page_header_with_defaults({
             uncompressed_page_size: page_data.length,
             compressed_page_size: page_data.length,
             data_page_header: {
@@ -28,7 +28,7 @@ module SimpleParquet
 
       # @return [String] Page header converted to a byte string
       def page_header_byte_string
-        writer = ByteStringWriter.new(page_header)
+        writer = Support::ByteStringWriter.new(page_header)
 
         writer.to_byte_string
       end
@@ -36,7 +36,7 @@ module SimpleParquet
       # @return [String] The values enocded into the proper format
       def page_data
         unless defined? @page_data
-          writer = ByteStringWriter.new(values)
+          writer = Support::ByteStringWriter.new(values)
           @page_data = writer.to_byte_string
         end
 

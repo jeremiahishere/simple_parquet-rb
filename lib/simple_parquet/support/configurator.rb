@@ -1,7 +1,7 @@
 require 'pry'
 
 module SimpleParquet
-  module Writer
+  module Support
     module Configurator
       def self.configurate(klass, *args)
         instance = klass.new(args)

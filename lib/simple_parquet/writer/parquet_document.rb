@@ -3,7 +3,7 @@ module SimpleParquet
     # organizes the parts of a parquet document so that it can be written
     class ParquetDocument
       def initialize(raw_csv)
-        @columnar_csv = ColumnarCsv.new(raw_csv)
+        @columnar_csv = Support::ColumnarCsv.parse_rowlumnar_csv(raw_csv)
       end
 
       # @return [String] A valid parquet file in byte string format
@@ -20,10 +20,10 @@ module SimpleParquet
       #   current level of parquet implementation
       def parts
         [
-          ByteStringWriter.new(parquet_special_string),
+          Support::ByteStringWriter.new(parquet_special_string),
           data_pages,
           file_meta_data,
-          ByteStringWriter.new(parquet_special_string)
+          Support::ByteStringWriter.new(parquet_special_string)
         ]
       end
 

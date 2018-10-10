@@ -1,8 +1,73 @@
 module SimpleParquet
-  module Writer
+  module Support
     RSpec.describe ColumnarCsv do
       let(:raw_csv) do
         File.read(File.join(File.dirname(__FILE__), '..', 'fixtures', 'hotdogs.csv'))
+      end
+
+      let(:raw_columnar_csv) do
+        [
+          [
+            'Sausage',
+            'hotdog',
+            'bratwurst',
+            'kielbasa',
+            'chorizo',
+            'liverwurst',
+            'andouille',
+            'bologna'
+          ], [
+            'Taste',
+            'good',
+            'just ok',
+            'smoky',
+            'ariba',
+            'irony',
+            'sweet',
+            'pasty'
+          ]
+        ]
+      end
+
+      describe '::parse_columnar_csv' do
+        it 'acts like a csv' do
+          csv = ColumnarCsv.parse_columnar_csv(raw_columnar_csv)
+
+          expect(csv.headers).to eq(['Sausage', 'Taste'])
+          rows = []
+          csv.each_row { |row| rows << row }
+          expect(rows.first.to_h).to eq({"Sausage"=>"hotdog", "Taste"=>"good"})
+        end
+      end
+
+      describe '::parse_rowlumnar_csv' do
+        it 'acts like a csv' do
+          csv = ColumnarCsv.parse_rowlumnar_csv(raw_csv)
+
+          expect(csv.headers).to eq(['Sausage', 'Taste'])
+          rows = []
+          csv.each_row { |row| rows << row }
+          expect(rows.first.to_h).to eq({"Sausage"=>"hotdog", "Taste"=>"good"})
+        end
+      end
+
+      describe '.rows' do
+        it 'returns an array of rows with no header row' do
+          csv = ColumnarCsv.new(raw_csv)
+
+          expect(csv.rows.first).to eq(['hotdog', 'good'])
+        end
+      end
+
+      describe '.each_row' do
+        it 'iterates through the rows' do
+          csv = ColumnarCsv.new(raw_csv)
+
+          rows = []
+          csv.each_row { |row| rows << row }
+
+          expect(rows.first.to_h).to eq({"Sausage"=>"hotdog", "Taste"=>"good"})
+        end
       end
 
       describe '.column' do

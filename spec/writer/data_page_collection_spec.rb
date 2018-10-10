@@ -5,7 +5,7 @@ module SimpleParquet
         File.read(File.join(File.dirname(__FILE__), '..', 'fixtures', 'hotdogs.csv'))
       end
 
-      let(:columnar_csv) { ColumnarCsv.new(raw_csv) }
+      let(:columnar_csv) { Support::ColumnarCsv.new(raw_csv) }
 
       describe '.offset_for' do
         it 'returns the initial offset for the first data page' do
