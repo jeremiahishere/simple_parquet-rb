@@ -32,7 +32,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/simple_parquet-rb.
+Bug reports and pull requests are welcome on GitHub at https://github.com/jeremiahishere/simple_parquet-rb.
 
 ## License
 

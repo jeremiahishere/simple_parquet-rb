@@ -1,4 +1,3 @@
-
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "simple_parquet/version"
@@ -7,11 +6,11 @@ Gem::Specification.new do |spec|
   spec.name          = "simple_parquet-rb"
   spec.version       = SimpleParquet::VERSION
   spec.authors       = ["Jeremiah Hemphill", "Kyle Finnell"]
-  spec.email         = ["jeremiah.hemphill@jdpa.com", "tfinnell@jdpa.com"]
+  spec.email         = ["jeremiah.hemphill@gmail.com", "tmfinnell@gmail.com"]
 
   spec.summary       = %q{Read and write a subset of parquet files in ruby}
   spec.description   = %q{Read and write a subset of parquet files in ruby}
-  spec.homepage      = "http://www.jdpa.com"
+  spec.homepage      = "http://www.github.com/jeremiahishere/simple_parquet-rb"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
