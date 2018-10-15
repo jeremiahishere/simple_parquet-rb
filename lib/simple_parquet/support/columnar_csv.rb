@@ -4,6 +4,7 @@ module SimpleParquet
   module Support
     # Converts a csv into a columnar format
     class ColumnarCsv
+      attr_reader :csv
       
       def self.parse_rowlumnar_csv(raw_csv)
         self.new(raw_csv, :rowlumnar)
@@ -47,15 +48,19 @@ module SimpleParquet
       end
 
       def headers
-        @csv.headers
+        csv.headers
+      end
+
+      def to_s
+        csv.to_s
       end
 
       def rows
-        @csv.to_a.slice(1..-1)
+        csv.to_a.slice(1..-1)
       end
 
       def each_row
-        @csv.each do |row|
+        csv.each do |row|
           yield(row)
         end
       end

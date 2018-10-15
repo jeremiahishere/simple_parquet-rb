@@ -12,13 +12,26 @@ module SimpleParquet
       end
 
       def self.set_additional_kvs(obj, additional_kvs)
+        return unless additional_kvs.is_a?(Hash)
+
         additional_kvs.each_pair do |key, value|
           if value.is_a?(Hash)
             # do nothing because the following line is too confusing
             # obj.send(":#{key}=", send(":#{key}_with_defaults", value))
-          else
+          elsif !obj.send(key)
+            puts "Setting #{key} to #{value}"
             obj.send("#{key.to_s}=".to_sym, value)
+          else
+            # do nothing because the field is already set
           end
+        end
+      end
+
+      def self.row_group_with_defaults(additional_kvs = {})
+        configurate(RowGroup) do |row_group|
+          row_group.columns = additional_kvs[:columns].collect { |kvs| column_chunk_with_defaults(kvs) }
+
+          set_additional_kvs(row_group, additional_kvs)
         end
       end
 
@@ -65,7 +78,7 @@ module SimpleParquet
           fmd.schema = additional_kvs[:schema]
           fmd.row_groups = additional_kvs[:row_groups]
           
-          fmd.created_by = "O2O"
+          fmd.created_by = "simple_parquet-rb"
           # fmd.key_value_metadata = [] # not sure if this is required
           # fmd.column_orders = ? # this definitely optional
 

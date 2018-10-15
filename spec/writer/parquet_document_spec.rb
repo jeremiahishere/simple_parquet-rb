@@ -2,7 +2,7 @@ module SimpleParquet
   module Writer
     RSpec.describe ParquetDocument do
       let(:raw_csv) do
-        raw_csv = File.read(File.join(File.dirname(__FILE__), '..', 'fixtures', 'hotdogs.csv'))
+        File.read(File.join(File.dirname(__FILE__), '..', 'fixtures', 'hotdogs.csv'))
       end
 
       describe '.to_byte_string' do
