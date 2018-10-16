@@ -37,3 +37,16 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+TODO
+- move the thrift struct readers from datA_page and file_meta_data into a shared class in Support
+- look into why column.meta_data.path_in_header would ever have more than one value and update
+  DataPage#column_header
+- clean up the Support::ColumnarCsv interface so it returns a csv string in a less annoying way
+- move Reader::ParquetSpecialString to the Support namespace and use it in Writer::ParquetDocument
+- look into how parquet stores integers in column chunks, the current code only has support for
+  strings in Support::ByteStringWriter
+- look into support for multiple row groups.  See Reader::ParquetDocument for one of the row group
+  limitations in the current code
+- Look into encoding including RLE
+- Look into all the terrible tests comparing byte strings to each other

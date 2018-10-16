@@ -19,7 +19,7 @@ module SimpleParquet
             # do nothing because the following line is too confusing
             # obj.send(":#{key}=", send(":#{key}_with_defaults", value))
           elsif !obj.send(key)
-            puts "Setting #{key} to #{value}"
+            # puts "Setting #{key} to #{value}"
             obj.send("#{key.to_s}=".to_sym, value)
           else
             # do nothing because the field is already set
